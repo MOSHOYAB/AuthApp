@@ -5,12 +5,35 @@ const { options } = require("../routes/user.js");
 require("dotenv").config();
 
 
-//signup route handler
+//featch data
+
+exports.welcome=async(req,res)=>{
+    try{
+      
+        const datafeatch=await User.find({})
+
+        res.status(200)
+        .json({
+            success:true,
+            data:datafeatch,
+            message:"API successfully called",
+        });
+
+    }catch{
+        console.log(error);
+        return res.status(500).json({
+          success:false,
+          message:'server error',
+      });
+
+    }
+}
+//signup
 exports.signup = async (req,res) => {
     try{
-        //get data
-        const {name, email, password, role} = req.body;
-        //check if user already exist
+       
+        const {name, email, password, phone_number} = req.body;
+        
         const existingUser = await User.findOne({email});
 
         if(existingUser){
@@ -20,7 +43,7 @@ exports.signup = async (req,res) => {
             });
         }
 
-        //secure password
+       
         let hashedPassword;
         try{
             hashedPassword = await bcrypt.hash(password, 10);
@@ -28,18 +51,18 @@ exports.signup = async (req,res) => {
         catch(err) {
             return res.status(500).json({
                 success:false,
-                message:'Error inn hashing Password',
+                message:'Error in hashing Password',
             });
         }
 
-        //create entry for User
+
         const user = await User.create({
-            name,email,password:hashedPassword,role
+            name,email,password:hashedPassword,phone_number
         })
 
         return res.status(200).json({
             success:true,
-            message:'User Created Successfully',
+            message:'Signed up successfully',
         });
 
     }
@@ -47,7 +70,7 @@ exports.signup = async (req,res) => {
         console.error(error);
         return res.status(500).json({
             success:false,
-            message:'User cannot be registered, please try again later',
+            message:'User cannot be registered',
         });
     }
 }
@@ -57,19 +80,18 @@ exports.signup = async (req,res) => {
 exports.login = async (req,res) => {
     try {
 
-        //data fetch
+   
         const {email, password} = req.body;
-        //validation on email and password
+        
         if(!email || !password) {
             return res.status(400).json({
                 success:false,
-                message:'PLease fill all the details carefully',
+                message:'PLease fill all the details',
             });
         }
 
-        //check for registered user
         let user = await User.findOne({email});
-        //if not a registered user
+      
         if(!user) {
             return res.status(401).json({
                 success:false,
@@ -80,11 +102,11 @@ exports.login = async (req,res) => {
         const payload = {
             email:user.email,
             id:user._id,
-            role:user.role,
+       
         };
-        //verify password & generate a JWT token
+       
         if(await bcrypt.compare(password,user.password) ) {
-            //password match
+         
             let token =  jwt.sign(payload, 
                                 process.env.JWT_SECRET,
                                 {
@@ -102,11 +124,11 @@ exports.login = async (req,res) => {
                 httpOnly:true,
             }
 
-            res.cookie("babbarCookie", token, options).status(200).json({
+            res.cookie("Cookie", token, options).status(200).json({
                 success:true,
                 token,
                 user,
-                message:'User Logged in successfully',
+                message:'hewwo',
             });
         }
         else {
@@ -122,8 +144,35 @@ exports.login = async (req,res) => {
         console.log(error);
         return res.status(500).json({
             success:false,
-            message:'Login Failure',
+            message:'Login Fail',
         });
 
     }
+}
+
+
+//edit phone_Number
+exports.Edit= async(req,res)=>{
+        try{
+          const {id}=req.params;
+          const {phone_number,currentNumber}=req.body;
+
+          const user= await User.findOneAndUpdate({phone_number:currentNumber},{phone_number:phone_number})
+         
+
+       
+        res.status(200).json({
+            success:true,
+            data:user,
+            message:`Phone number changed / added successfully`
+        })
+
+        }catch(error){
+          console.log(error);
+          return res.status(500).json({
+            success:false,
+            message:'server error',
+        });
+
+        } 
 }
